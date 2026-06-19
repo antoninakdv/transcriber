@@ -1,0 +1,34 @@
+﻿# secrets
+.env
+.env.*
+*.key
+
+# python
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# node / frontend
+node_modules/
+dist/
+build/
+
+# your data - never commit audio or transcripts
+*.wav
+*.mp3
+*.m4a
+*.ogg
+recordings/
+transcripts/
+output/
+
+# whisper models (large)
+*.pt
+*.bin
+models/
+
+# misc
+Thumbs.db
+*.log
