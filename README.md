@@ -1,3 +1,4 @@
+<p align="center"><img src="frontend/public/favicon.svg" width="96" alt="Transcriber logo"></p>
 # Transcriber
 
 A lightweight, local-first audio transcription app. It turns audio into text with **OpenAI Whisper running on your own machine**, and can optionally use **Mistral** for cloud transcription (Voxtral) and for refining transcripts into notes, action items, and more. It runs as a small FastAPI backend plus a React frontend — no Docker, no database, no cloud account required to get started.
