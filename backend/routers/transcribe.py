@@ -62,11 +62,13 @@ def _run_transcription(
         whisper_model: Whisper model name (ignored by the Voxtral engine)
         jobs: Dictionary to store job state
     """
+    engine = get_engine(engine_name, whisper_model)
+    # Visible in the backend terminal while a job runs.
+    print(f"Transcribing {job_id} with engine={engine_name} model={engine.model_name}", flush=True)
     try:
         jobs[job_id].status = "processing"
         jobs[job_id].progress = 10
 
-        engine = get_engine(engine_name, whisper_model)
         result = engine.transcribe(audio_path, filename)
         jobs[job_id].progress = 90
 
@@ -78,15 +80,23 @@ def _run_transcription(
             file_id=file_id,
             text=result.get("text", ""),
             segments=segments,
-            model=result.get("model", whisper_model),
+            model=result.get("model", engine.model_name),
             language=result.get("language", "en"),
+            engine=engine_name,  # record the engine that actually produced this transcript
         )
         file_service.save_transcription(file_id, transcription)
         jobs[job_id].status = "completed"
         jobs[job_id].progress = 100
+        print(f"Transcribed {job_id} with engine={engine_name} model={transcription.model}", flush=True)
     except Exception as e:
+        # No silent fallback: a Voxtral failure fails the job with a clear reason
+        # rather than quietly transcribing with Whisper instead.
         jobs[job_id].status = "error"
-        jobs[job_id].error = str(e)
+        if engine_name == "voxtral":
+            jobs[job_id].error = f"Voxtral transcription failed (no fallback to Whisper): {e}"
+        else:
+            jobs[job_id].error = str(e)
+        print(f"Transcription {job_id} FAILED (engine={engine_name}): {e}", flush=True)
 
 
 @router.post("/{file_id}")

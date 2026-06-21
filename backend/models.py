@@ -21,6 +21,7 @@ class TranscriptionResult(BaseModel):
     segments: list[TranscriptionSegment]
     model: str
     language: str
+    engine: str = ""  # engine that produced this transcript: "whisper" or "voxtral"
     edited: bool = False  # True once the user has manually edited the transcript
 
 

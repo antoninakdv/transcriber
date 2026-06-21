@@ -2,6 +2,14 @@ import { useState, useRef } from 'react';
 import RefinementPanel from './RefinementPanel';
 import { exportRefinedDocx, updateTranscription, getAudioUrl } from '../api/client';
 
+// The engine that produced a transcript. Uses the recorded `engine` field; for
+// legacy transcripts saved before it existed, derives it from the model id.
+function engineLabel(result) {
+  const engine = result.engine
+    || (String(result.model || '').toLowerCase().startsWith('voxtral') ? 'voxtral' : 'whisper');
+  return engine === 'voxtral' ? 'Mistral (Voxtral)' : 'Local (Whisper)';
+}
+
 function formatTs(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -107,7 +115,7 @@ export default function TranscriptionView({ result, fileId, onUpdated }) {
       <div className="transcription-header">
         <h3>{showOriginal ? 'Transcription' : 'Refined Transcript'}</h3>
         <div className="transcription-meta">
-          Model: {result.model} &middot; Language: {result.language}
+          Engine: {engineLabel(result)} &middot; Model: {result.model} &middot; Language: {result.language}
           {refinedResult && (
             <span> &middot; Refined with: {refinedResult.mode}</span>
           )}
