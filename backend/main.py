@@ -10,7 +10,7 @@ from services import mistral_client
 
 TRANSCRIPTION_ENGINES = ["whisper", "voxtral"]
 
-app = FastAPI(title="Whisper Transcription API")
+app = FastAPI(title="Transcription API")
 
 app.add_middleware(
     CORSMiddleware,

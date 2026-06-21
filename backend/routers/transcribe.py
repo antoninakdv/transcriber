@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict
 
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 
 from models import JobStatus, TranscriptionResult, TranscriptionSegment
 from services import file_service
@@ -160,4 +161,26 @@ async def get_result(file_id: str):
     result = file_service.get_transcription(file_id)
     if not result:
         raise HTTPException(status_code=404, detail="Transcription not found")
+    return result
+
+
+class TranscriptUpdate(BaseModel):
+    """Body for a manual transcript edit."""
+    text: str
+
+
+@router.put("/{file_id}/result", response_model=TranscriptionResult)
+async def update_result(file_id: str, body: TranscriptUpdate):
+    """Persist a manually edited transcript as the canonical text for this file.
+
+    The edited text becomes what export and refinement use; segments and metadata
+    are kept as-is so the original timing reference is not lost.
+    """
+    result = file_service.get_transcription(file_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Transcription not found")
+
+    result.text = body.text
+    result.edited = True
+    file_service.save_transcription(file_id, result)
     return result

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Feature Verification Script for Whisper Transcriber
+Feature Verification Script for Transcriber
 
 This script verifies that all existing features work correctly after plumbing refactoring.
 Run this after M1 changes to ensure zero behavior change.

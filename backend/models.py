@@ -21,6 +21,7 @@ class TranscriptionResult(BaseModel):
     segments: list[TranscriptionSegment]
     model: str
     language: str
+    edited: bool = False  # True once the user has manually edited the transcript
 
 
 class JobStatus(BaseModel):

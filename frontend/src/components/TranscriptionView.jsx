@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import RefinementPanel from './RefinementPanel';
-import { exportRefinedDocx } from '../api/client';
+import { exportRefinedDocx, updateTranscription } from '../api/client';
 
 function formatTs(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -10,16 +10,39 @@ function formatTs(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-export default function TranscriptionView({ result, fileId }) {
+export default function TranscriptionView({ result, fileId, onUpdated }) {
   const [refinedResult, setRefinedResult] = useState(null);
   const [showOriginal, setShowOriginal] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
 
   if (!result) return null;
 
   const handleRefined = (refineResult) => {
     setRefinedResult(refineResult);
     setShowOriginal(false);
+  };
+
+  const handleEdit = () => {
+    setDraft(result.text);
+    setEditing(true);
+  };
+
+  const handleCancelEdit = () => setEditing(false);
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const updated = await updateTranscription(fileId, draft);
+      onUpdated?.(updated); // lift the saved transcript so view + downstream stay in sync
+      setEditing(false);
+    } catch (err) {
+      alert('Failed to save transcript: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleExportRefined = async () => {
@@ -89,15 +112,41 @@ export default function TranscriptionView({ result, fileId }) {
       </div>
       
       <div className="transcription-full">
-        <h4>Full Text</h4>
-        <div className="transcription-text-content">
-          {refinedResult?.metadata?.output_format === 'json' ? (
-            <pre className="transcription-json">{displayText}</pre>
-          ) : (
-            <p>{displayText}</p>
+        <div className="transcription-full-header">
+          <h4>Full Text{showOriginal && result.edited ? ' (edited)' : ''}</h4>
+          {showOriginal && fileId && !editing && (
+            <button className="btn btn-sm" onClick={handleEdit}>Edit</button>
           )}
         </div>
-        
+
+        {showOriginal && editing ? (
+          <div className="transcript-edit">
+            <textarea
+              className="transcript-edit-area"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={12}
+              disabled={saving}
+            />
+            <div className="settings-actions">
+              <button className="btn btn-sm btn-primary" onClick={handleSaveEdit} disabled={saving}>
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button className="btn btn-sm" onClick={handleCancelEdit} disabled={saving}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="transcription-text-content">
+            {!showOriginal && refinedResult?.metadata?.output_format === 'json' ? (
+              <pre className="transcription-json">{displayText}</pre>
+            ) : (
+              <p>{displayText}</p>
+            )}
+          </div>
+        )}
+
         {refinedResult && !showOriginal && (
           <div className="refined-actions">
             <button 

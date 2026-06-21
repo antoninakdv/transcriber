@@ -1,10 +1,10 @@
 # Architecture Overview
 
-This document provides a comprehensive view of the Whisper Transcriber's architecture, design decisions, and data flow. It serves as both technical documentation and an interview talking point for the AI Deployment Strategist role.
+This document provides a comprehensive view of the Transcriber's architecture, design decisions, and data flow. It serves as both technical documentation and an interview talking point for the AI Deployment Strategist role.
 
 ## Executive Summary
 
-The Whisper Transcriber is a **local-first, client-server application** that combines Whisper's offline speech-to-text with Mistral's optional cloud-based refinement. It's designed to be:
+The Transcriber is a **local-first, client-server application** that combines Whisper's offline speech-to-text with Mistral's optional cloud-based refinement. It's designed to be:
 
 - **Zero-infrastructure**: No Docker, containers, databases, or external services required
 - **Local-first**: All core functionality works without internet connectivity

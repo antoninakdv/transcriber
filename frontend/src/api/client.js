@@ -47,6 +47,11 @@ export async function getTranscriptionResult(fileId) {
   return data;
 }
 
+export async function updateTranscription(fileId, text) {
+  const { data } = await api.put(`/transcribe/${fileId}/result`, { text });
+  return data;
+}
+
 export async function exportDocx(fileId, refinedMode = null) {
   const params = refinedMode ? { refined_mode: refinedMode } : {};
   const response = await api.post(`/export/docx/${fileId}`, null, {

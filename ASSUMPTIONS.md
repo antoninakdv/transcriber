@@ -189,6 +189,25 @@ This document records decisions made during the review and implementation proces
 
 ---
 
+## Prompt 3 Assumptions (editable transcripts + drop "Whisper" branding)
+
+**ASSUMPTION-031: Edited text is canonical; segments kept as a backstop**
+- **Decision**: A manual edit updates `TranscriptionResult.text` and sets `edited=True`; the original `segments` (with timings) are kept unchanged.
+- **Reasoning**: Prompt 3 wants the edited text canonical for export + refinement, while "keeping the untouched original as a backstop if trivial." Segments are the cheap backstop/time reference.
+- **Impact**: Refinement already reads `transcription.text`, so it uses the edit automatically. New `PUT /api/transcribe/{file_id}/result` persists the edit.
+
+**ASSUMPTION-032: Edited transcripts export as full text (no stale timestamps)**
+- **Decision**: When `edited` (or refined), `generate_docx` renders the full text; an unedited machine transcript keeps the per-segment timestamp layout.
+- **Reasoning**: After a free-text edit the segment timings no longer line up with the words; showing them would be misleading.
+- **Impact**: Existing (unedited) export behaviour is byte-for-byte preserved; edited export reflects the edit.
+
+**ASSUMPTION-033: "Whisper" branding vs engine reference**
+- **Decision**: Renamed user-facing product branding (navbar, API title, `start.bat` titles/banner, Clean-transcript description, README/ARCHITECTURE/.env.example headers) to "Transcriber". Kept "Whisper" everywhere it names the local engine (`WhisperEngine`, `whisper_service`, imports, `openai-whisper`, "Local (Whisper)" selector, "Whisper Model" label, engine comments). No global find-replace.
+- **Reasoning**: Prompt 3 Feature 2 — surgical, branding-only.
+- **Impact**: `verify_backend.py`'s title assertion was updated to match. The internal keychain service id `whisper-transcriber` was **left unchanged** (not user-facing; renaming would orphan any already-remembered key). `REVIEW.md` and dev verification-script banners were left as historical artifacts.
+
+---
+
 ## Decision Log Format
 
 Each decision follows this format:
@@ -205,4 +224,4 @@ None at this time. The UPGRADE_PROMPT provides sufficient guidance for all major
 
 ---
 
-*Last updated: 2026-06-21 (Prompt 2)*
+*Last updated: 2026-06-21 (Prompt 3)*

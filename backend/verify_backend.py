@@ -203,7 +203,7 @@ def test_main_app():
         from fastapi import FastAPI
         
         assert isinstance(app, FastAPI)
-        assert app.title == "Whisper Transcription API"
+        assert app.title == "Transcription API"
         
         # Check that routes are registered
         routes = [route.path for route in app.routes]

@@ -1,4 +1,4 @@
-# Whisper Transcriber with Mistral Refinement
+# Transcriber with Mistral Refinement
 
 A lightweight, local audio transcription tool that uses Whisper for speech-to-text, with optional Mistral-powered refinement for enhanced results.
 

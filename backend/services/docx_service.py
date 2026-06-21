@@ -26,7 +26,7 @@ def generate_docx(
     """Generate DOCX document from transcription result.
     
     Args:
-        result: TranscriptionResult from Whisper
+        result: TranscriptionResult from the transcription engine
         original_filename: Name of the original audio file
         refined_text: Optional refined text to include instead of original
         refined_mode: Optional name of refinement mode used
@@ -49,13 +49,12 @@ def generate_docx(
         doc.add_paragraph(f"Refined with: {refined_mode}")
     doc.add_paragraph("")
 
-    # Add content based on whether we have refined text
-    text_to_export = refined_text or result.text
-    
-    if refined_text:
-        # For refined text, just show the full refined content
+    # Refined text and manually edited transcripts export as full text (their segment
+    # timings no longer match the words); an unedited machine transcript keeps the
+    # per-segment timestamp layout.
+    if refined_text or result.edited:
         p = doc.add_paragraph()
-        text_run = p.add_run(text_to_export)
+        text_run = p.add_run(refined_text or result.text)
         text_run.font.size = Pt(11)
     else:
         # For original transcription, show segments with timestamps

@@ -1,12 +1,12 @@
 """Text refinement service with Mistral integration.
 
-This service provides the refinement modes for post-processing Whisper transcriptions
+This service provides the refinement modes for post-processing transcripts
 using Mistral's API. It implements a registry pattern where each mode is a separate
 prompt template, allowing for easy extension.
 
 Modes:
 1. Meeting notes / bullet points - Structured summary with key points, decisions, topics
-2. Clean transcript - Rewrite transcript to read naturally, fixing Whisper errors
+2. Clean transcript - Rewrite transcript to read naturally, fixing transcription errors
 3. Action items - Extract structured checklist with tasks, owners, due dates
 4. Prompt generator - Create best-practice prompts from transcript intent
 5. Custom instruction - Apply user's own instruction to the transcript
@@ -85,10 +85,10 @@ MEETING_NOTES_SYSTEM_PROMPT = (
 
 CLEAN_TRANSCRIPT_SYSTEM_PROMPT = (
     "You are a transcription refinement assistant. "
-    "Your task is to clean up a Whisper-generated transcript to read as natural speech.\n\n"
+    "Your task is to clean up a machine-generated transcript to read as natural speech.\n\n"
     "Guidelines:\n"
     "- Rewrite the FULL transcript to read naturally as proper English\n"
-    "- Infer likely intended words Whisper missed from context\n"
+    "- Infer likely intended words the transcriber missed from context\n"
     "- Remove filler words (um, ah, like, you know, etc.)\n"
     "- Remove false starts and self-repetition\n"
     "- Preserve ALL meaning and content - do NOT omit or change what was said\n"
@@ -177,7 +177,7 @@ PROMPT_TEMPLATES = {
     
     RefinementMode.CLEAN_TRANSCRIPT: RefinementModeConfig(
         name="Clean Transcript", 
-        description="Rewrite the full transcript to read naturally, fixing Whisper errors",
+        description="Rewrite the full transcript to read naturally, fixing transcription errors",
         system_prompt=CLEAN_TRANSCRIPT_SYSTEM_PROMPT,
         user_prompt_template="Please clean up this transcript:\n\n{transcript}",
         model="mistral-small-latest", 
