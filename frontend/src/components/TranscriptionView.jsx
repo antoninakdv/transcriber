@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import RefinementPanel from './RefinementPanel';
 import { exportRefinedDocx, updateTranscription, getAudioUrl } from '../api/client';
 
@@ -20,43 +20,46 @@ export default function TranscriptionView({ result, fileId, onUpdated }) {
 
   // One shared <audio> element drives every segment snippet (seek + play + auto-stop).
   const audioRef = useRef(null);
-  const segmentEndRef = useRef(null);
+  const segmentEndRef = useRef(null); // end time (s) of the segment currently playing
   const [playingSegment, setPlayingSegment] = useState(null);
-
-  // Auto-stop a snippet when playback reaches the segment's end time.
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTimeUpdate = () => {
-      if (segmentEndRef.current != null && audio.currentTime >= segmentEndRef.current) {
-        audio.pause();
-        setPlayingSegment(null);
-      }
-    };
-    const onEnded = () => setPlayingSegment(null);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('ended', onEnded);
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, []);
 
   if (!result) return null;
 
   const handlePlaySegment = (index, seg) => {
     const audio = audioRef.current;
     if (!audio) return;
+    // Clicking the segment that is currently playing pauses it.
     if (playingSegment === index) {
       audio.pause();
+      segmentEndRef.current = null;
       setPlayingSegment(null);
       return;
     }
+    // Start or replay this segment: ALWAYS re-seek to its start, remember its end.
+    // (After auto-pause playingSegment is null, so a replay also lands here.)
     segmentEndRef.current = seg.end;
     audio.currentTime = seg.start;
     const started = audio.play();
     if (started?.catch) started.catch(() => {}); // ignore interrupted-play rejections
     setPlayingSegment(index);
+  };
+
+  // Single React-managed timeupdate handler (no manual add/removeEventListener,
+  // so no stacked listeners): pause exactly at the active segment's end and clear
+  // the playing state so the next click on that segment is a fresh start.
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (segmentEndRef.current != null && audio.currentTime >= segmentEndRef.current) {
+      audio.pause();
+      segmentEndRef.current = null;
+      setPlayingSegment(null);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    segmentEndRef.current = null;
+    setPlayingSegment(null);
   };
 
   const handleRefined = (refineResult) => {
@@ -140,7 +143,15 @@ export default function TranscriptionView({ result, fileId, onUpdated }) {
       )}
 
       {/* Shared audio element for per-segment snippet playback (reuses the file's audio URL). */}
-      {fileId && <audio ref={audioRef} src={getAudioUrl(fileId)} preload="metadata" />}
+      {fileId && (
+        <audio
+          ref={audioRef}
+          src={getAudioUrl(fileId)}
+          preload="metadata"
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleAudioEnded}
+        />
+      )}
 
       <div className="transcription-segments">
         {displayedResult.segments?.map((seg, i) => (

@@ -1,4 +1,4 @@
 {
   "model": "base",
-  "transcription_engine": "whisper"
+  "transcription_engine": "voxtral"
 }
