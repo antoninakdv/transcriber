@@ -132,7 +132,7 @@ export default function FileList({ files, onRefresh, currentModel }) {
       )}
 
       {transcriptionResult && selectedId && (
-        <TranscriptionView result={transcriptionResult} />
+        <TranscriptionView result={transcriptionResult} fileId={selectedId} />
       )}
     </div>
   );

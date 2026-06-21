@@ -1,7 +1,9 @@
-﻿# secrets
+﻿# secrets (but keep the committed .env.example template)
 .env
 .env.*
+!.env.example
 *.key
+MISTRAL_API_KEY
 
 # python
 .venv/

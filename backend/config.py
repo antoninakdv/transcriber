@@ -1,6 +1,32 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parent
+
+
+def _load_dotenv() -> None:
+    """Load KEY=VALUE pairs from a local .env file into the environment.
+
+    A tiny, dependency-free reader so a gitignored `.env` works as the primary way
+    to supply secrets like MISTRAL_API_KEY (keeping us to a single new dependency).
+    A value already set in the real environment always wins, so an explicitly
+    exported variable is never overridden. Looks in the backend folder first, then
+    the repository root.
+    """
+    for env_path in (BASE_DIR / ".env", REPO_ROOT / ".env"):
+        if not env_path.exists():
+            continue
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
 WORKSPACE_DIR = BASE_DIR / "workspace"
 UPLOADS_DIR = WORKSPACE_DIR / "uploads"
 RECORDINGS_DIR = WORKSPACE_DIR / "recordings"
