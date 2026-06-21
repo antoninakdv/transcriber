@@ -4,6 +4,12 @@
 
 A lightweight, local-first audio transcription app. It turns audio into text with **OpenAI Whisper running on your own machine**, and can optionally use **Mistral** for cloud transcription (Voxtral) and for refining transcripts into notes, action items, and more. It runs as a small FastAPI backend plus a React frontend — no Docker, no database, no cloud account required to get started.
 
+## Demo
+
+![Transcriber demo](assets/demo.gif)
+
+*Drop in a WhatsApp voice note or any audio/video file → transcribe locally with Whisper or via Mistral Voxtral → refine with Mistral → export to Word.*
+
 ## Features
 
 - **Two transcription engines**
@@ -25,6 +31,12 @@ A lightweight, local-first audio transcription app. It turns audio into text wit
 - **Secure API-key handling** — enter the key in Settings (masked) or via `.env`; test the connection; optionally remember it in your OS keychain. The key is never returned to the browser or written to a plaintext file.
 
 Without a Mistral key, the app is a fully functional **offline Whisper transcriber** — the cloud engine and refinement simply stay disabled.
+
+## Screenshots
+
+| Home | Settings | Transcription |
+| --- | --- | --- |
+| ![Home screen — drag, drop, paste or record; active engine shown up front](assets/screenshot-home.png) | ![Settings — choose the local Whisper or Mistral Voxtral engine and add a masked API key](assets/screenshot-settings.png) | ![Transcription — transcribe the audio, listen to snippets for manual edits, and refine with Mistral](assets/screenshot-test.png) |
 
 ## Prerequisites
 
