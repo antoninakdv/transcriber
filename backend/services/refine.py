@@ -230,12 +230,24 @@ class RefinementService:
     
     def __init__(self, mistral_client: Optional[MistralClientService] = None):
         """Initialize the refinement service.
-        
+
         Args:
-            mistral_client: Mistral client service instance. If None, creates one.
+            mistral_client: Mistral client to use. If None (the normal case), the
+                live client is resolved from the shared key store on every call, so
+                refinement availability always matches what the Voxtral path sees.
         """
-        self.mistral_client = mistral_client or get_mistral_client()
+        self._injected_client = mistral_client
         self.mode_registry = self._build_mode_registry()
+
+    @property
+    def mistral_client(self) -> MistralClientService:
+        """The current Mistral client, resolved from the single key source of truth.
+
+        Resolving on access (rather than caching at construction) means a key added
+        later via the Settings field / keychain / .env is picked up immediately,
+        exactly like the Voxtral transcription path.
+        """
+        return self._injected_client or get_mistral_client()
     
     def _build_mode_registry(self) -> Dict[str, RefinementModeConfig]:
         """Build the mode registry from prompt templates.
