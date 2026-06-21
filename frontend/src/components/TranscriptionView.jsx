@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import RefinementPanel from './RefinementPanel';
-import { exportRefinedDocx, updateTranscription } from '../api/client';
+import { exportRefinedDocx, updateTranscription, getAudioUrl } from '../api/client';
 
 function formatTs(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -18,7 +18,46 @@ export default function TranscriptionView({ result, fileId, onUpdated }) {
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // One shared <audio> element drives every segment snippet (seek + play + auto-stop).
+  const audioRef = useRef(null);
+  const segmentEndRef = useRef(null);
+  const [playingSegment, setPlayingSegment] = useState(null);
+
+  // Auto-stop a snippet when playback reaches the segment's end time.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTimeUpdate = () => {
+      if (segmentEndRef.current != null && audio.currentTime >= segmentEndRef.current) {
+        audio.pause();
+        setPlayingSegment(null);
+      }
+    };
+    const onEnded = () => setPlayingSegment(null);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, []);
+
   if (!result) return null;
+
+  const handlePlaySegment = (index, seg) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playingSegment === index) {
+      audio.pause();
+      setPlayingSegment(null);
+      return;
+    }
+    segmentEndRef.current = seg.end;
+    audio.currentTime = seg.start;
+    const started = audio.play();
+    if (started?.catch) started.catch(() => {}); // ignore interrupted-play rejections
+    setPlayingSegment(index);
+  };
 
   const handleRefined = (refineResult) => {
     setRefinedResult(refineResult);
@@ -100,9 +139,20 @@ export default function TranscriptionView({ result, fileId, onUpdated }) {
         </div>
       )}
 
+      {/* Shared audio element for per-segment snippet playback (reuses the file's audio URL). */}
+      {fileId && <audio ref={audioRef} src={getAudioUrl(fileId)} preload="metadata" />}
+
       <div className="transcription-segments">
         {displayedResult.segments?.map((seg, i) => (
-          <div key={i} className="segment">
+          <div key={i} className={`segment ${playingSegment === i ? 'segment--playing' : ''}`}>
+            <button
+              className="segment-play"
+              onClick={() => handlePlaySegment(i, seg)}
+              aria-label={playingSegment === i ? 'Stop segment' : 'Play segment'}
+              title={playingSegment === i ? 'Stop' : 'Play this segment'}
+            >
+              {playingSegment === i ? '❚❚' : '▶'}
+            </button>
             <span className="segment-time">
               [{formatTs(seg.start)} - {formatTs(seg.end)}]
             </span>

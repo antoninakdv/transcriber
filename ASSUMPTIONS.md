@@ -208,6 +208,25 @@ This document records decisions made during the review and implementation proces
 
 ---
 
+## Prompt 4 Assumptions (per-segment audio snippet playback)
+
+**ASSUMPTION-034: Segment seconds already available — no backend change**
+- **Decision**: Reused the existing numeric `start`/`end` on each segment; did not add or change any backend data.
+- **Reasoning**: `TranscriptionSegment` already carries float `start`/`end` (both Whisper and Voxtral populate them), so M1 (data) was unnecessary.
+- **Impact**: Prompt 4 is a frontend-only change in `TranscriptionView.jsx`.
+
+**ASSUMPTION-035: One shared `<audio>` element, reusing the existing audio URL**
+- **Decision**: Added a single hidden `<audio>` in the transcript view, sourced from the existing `getAudioUrl(fileId)`. Each segment ▶ seeks to `start`, plays, and a `timeupdate` listener auto-pauses at `end`; clicking again replays; the active segment gets a `segment--playing` highlight.
+- **Reasoning**: Spec requires one shared native element and reuse of the existing endpoint (verified the endpoint returns HTTP 206 for Range requests, so seeking works).
+- **Impact**: No media library, no new endpoint, no new dependency.
+
+**ASSUMPTION-036: Segment playback and file-level Play are independent native elements**
+- **Decision**: The per-segment feature uses its own shared `<audio>`; the file-level Play (a transient `new Audio()` in `FileList`) is left untouched.
+- **Reasoning**: Unifying them would mean lifting audio state across components — beyond a surgical, additive change. They do not break each other.
+- **Impact**: If a user deliberately starts the whole-file Play *and* a segment snippet, both could sound at once — a minor, self-inflicted edge case, not a functional regression. Each control on its own behaves correctly.
+
+---
+
 ## Decision Log Format
 
 Each decision follows this format:
