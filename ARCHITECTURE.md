@@ -190,6 +190,13 @@ User Clicks "Export DOCX"
 - `load_model()`: Load and cache Whisper models
 - `transcribe()`: Run transcription on audio file
 
+**transcription_engines.py** (engine abstraction)
+- `TranscriptionEngine`: tiny ABC — `transcribe(audio_path, filename) -> {text, language, segments, model}`
+- `WhisperEngine`: wraps `whisper_service` unchanged (local, default)
+- `VoxtralEngine`: calls Mistral Voxtral STT via `mistral_client`
+- `get_engine(name, whisper_model)`: selects the engine (defaults to Whisper)
+- Both engines return the **same normalized shape**, so view/.docx/refinement are engine-agnostic
+
 **docx_service.py**
 - `format_timestamp()`: Convert seconds to HH:MM:SS
 - `generate_docx()`: Create DOCX from transcription result
@@ -200,11 +207,14 @@ User Clicks "Export DOCX"
 - `set_settings()`: Save settings to file and update cache
 - `get_default_model()`: Get current default model
 
-**mistral_client.py**
-- `MistralClientService`: Main client class
-- `refine_text()`: Call Mistral chat API with prompts
-- Custom exception hierarchy (AuthenticationError, RateLimitError, NetworkError)
-- Singleton pattern via `get_mistral_client()`
+**mistral_client.py** (single source of truth for the key + all Mistral calls)
+- Key store: `get_active_key()` (env → session → keychain), `set_key(remember)`, `clear_key()`, `key_status()` (configured/source/last-4 hint — never the raw key)
+- `MistralClientService`: client class, rebuilt whenever the key changes
+- `refine_text()`: Mistral chat API (text refinement)
+- `transcribe_audio()`: Voxtral speech-to-text (`voxtral-mini-latest`), normalized result
+- `test_connection()`: one lightweight call to validate the key
+- `_classify_error()`: maps SDK/HTTP errors to typed auth / rate-limit / network errors
+- Singleton via `get_mistral_client()`
 
 **refine.py**
 - `RefinementMode`: Enum of 5 modes
@@ -334,20 +344,24 @@ class MistralNetworkError(MistralClientError):
 ## Security Measures
 
 ### API Key Handling
-1. **Primary**: Environment variable (`.env` file, git-ignored)
-2. **Secondary**: Session-only UI input (masked password field)
-3. **Optional**: OS keychain for persistence (not implemented yet)
+Resolution precedence (`mistral_client.get_active_key()`):
+1. **Primary**: `MISTRAL_API_KEY` environment variable (`.env`, git-ignored)
+2. **Session**: masked UI field, held in memory for the process only
+3. **Remembered**: OS keychain (Windows Credential Manager via `keyring`) when the user opts in
 
 **Never:**
 - Hardcoded in source code
+- Written to `settings.json` or any plaintext file
 - Committed to git
 - Logged or echoed to console
-- Transmitted anywhere except Mistral API
+- Returned to the browser (the API exposes only `configured` / `source` / last-4 `hint`)
+- Transmitted anywhere except the Mistral API
 
 ### Data Protection
 - All audio files stored locally
 - All transcriptions stored locally
-- Mistral API only called when user explicitly requests refinement
+- Mistral API only called when the user explicitly refines **or** selects the Voxtral engine
+- The UI states plainly (Settings + home-page banner) when audio will be sent to Mistral
 - No telemetry or usage tracking
 - Proper CORS configuration (localhost only by default)
 

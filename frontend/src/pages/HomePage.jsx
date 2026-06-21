@@ -7,6 +7,7 @@ import { listFiles, getSettings } from '../api/client';
 export default function HomePage() {
   const [files, setFiles] = useState([]);
   const [model, setModel] = useState('base');
+  const [engine, setEngine] = useState('whisper');
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -14,6 +15,7 @@ export default function HomePage() {
       const [fileData, settings] = await Promise.all([listFiles(), getSettings()]);
       setFiles(fileData);
       setModel(settings.model);
+      setEngine(settings.transcription_engine || 'whisper');
     } catch {
       console.error('Failed to load data');
     } finally {
@@ -22,7 +24,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    (async () => { await refresh(); })();
   }, [refresh]);
 
   return (
@@ -31,6 +33,13 @@ export default function HomePage() {
         <FileDropZone onUploaded={refresh} />
         <AudioRecorder onRecorded={refresh} />
       </div>
+      {!loading && (
+        <p className={`engine-banner ${engine === 'voxtral' ? 'engine-banner--cloud' : ''}`}>
+          {engine === 'voxtral'
+            ? 'Engine: Mistral Voxtral (cloud) — audio is uploaded to Mistral for transcription.'
+            : 'Engine: Local Whisper — runs offline on this machine.'}
+        </p>
+      )}
       {loading ? (
         <p>Loading...</p>
       ) : (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRefinement } from '../hooks/useRefinement';
 
-export default function RefinementPanel({ fileId, originalText, onRefined, currentModel }) {
+export default function RefinementPanel({ fileId, onRefined }) {
   const { modes, available, loading, error, loadModes, refine } = useRefinement();
   const [selectedMode, setSelectedMode] = useState(null);
   const [customInstruction, setCustomInstruction] = useState('');
@@ -53,7 +53,7 @@ export default function RefinementPanel({ fileId, originalText, onRefined, curre
       <div className="refinement-panel refinement-unavailable">
         <h4>Mistral Refinement Unavailable</h4>
         <p>To enable advanced refinement features, please set your Mistral API key.</p>
-        <p><small>Add <code>MISTRAL_API_KEY=your_key_here</code> to your .env file.</small></p>
+        <p><small>Add it in <strong>Settings</strong>, or set <code>MISTRAL_API_KEY</code> in your environment / .env file.</small></p>
       </div>
     );
   }

@@ -32,4 +32,5 @@ class JobStatus(BaseModel):
 
 
 class Settings(BaseModel):
-    model: str = "base"
+    model: str = "base"  # Whisper model size
+    transcription_engine: str = "whisper"  # "whisper" (local) or "voxtral" (cloud)

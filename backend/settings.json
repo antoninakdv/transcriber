@@ -1,3 +1,4 @@
 {
-  "model": "base"
+  "model": "base",
+  "transcription_engine": "whisper"
 }

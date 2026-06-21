@@ -42,10 +42,24 @@ This tool provides the best of both worlds:
 - ✅ **Custom Instruction** - Apply your own processing rules
 - ✅ **Graceful degradation** - Works without API key, all features opt-in
 
+### Transcription Engines (choose per your constraint)
+- ✅ **Local (Whisper)** — the **default**, fully offline and private
+- ✅ **Mistral (Voxtral, cloud)** — opt-in, higher-quality cloud STT (`voxtral-mini-latest`)
+- ✅ **Same downstream flow** — both engines feed view → .docx → refinement identically
+- ✅ **Pluggable design** — adding another engine is one new class
+
+### Secure API Key Handling
+- ✅ **Masked field in Settings** — enter your Mistral key in the UI (password-style)
+- ✅ **Precedence**: environment / `.env` is primary; the Settings field is an override
+- ✅ **Session by default**; optional **"Remember on this device"** stores it in the **OS keychain** (Windows Credential Manager via `keyring`) — never a plaintext file
+- ✅ **Never returned to the browser** — the API exposes only *configured / source / last-4 hint*
+- ✅ **Test connection** button and a clear connected / no-key status indicator
+
 ### Data Control & Privacy
 - ✅ **Whisper-only is first-class** - Full functionality without Mistral
 - ✅ **Local-first design** - No data leaves your machine unless you choose
-- ✅ **Secure key handling** - Environment variables, never committed
+- ✅ **Secure key handling** - Env/keychain, never logged or committed
+- ✅ **Transparent cloud use** - the UI states plainly when audio is sent to Mistral
 - ✅ **No tracking or telemetry**
 
 ## Quick Start
@@ -83,12 +97,30 @@ npm install
 cd ..
 ```
 
-4. **(Optional) Set Mistral API key**
-```bash
-# Create .env file in project root
- echo MISTRAL_API_KEY=your_api_key_here > .env
-```
-Get your API key from [Mistral Console](https://console.mistral.ai/)
+4. **(Optional) Set Mistral API key** — needed only for Voxtral transcription and refinement
+
+   Two ways (env takes precedence):
+   - **`.env` file** (primary, good for a permanent setup):
+     ```bash
+     # Create .env file in project root
+     echo MISTRAL_API_KEY=your_api_key_here > .env
+     ```
+   - **In the app** — open **Settings**, paste your key into the masked field, and Save.
+     Tick **"Remember on this device"** to store it in your OS keychain; otherwise it lasts
+     only for the session. Use **Test connection** to verify it.
+
+   Get your API key from [Mistral Console](https://console.mistral.ai/).
+
+   **Without a key the app is a fully functional offline Whisper transcriber** — Voxtral and
+   refinement simply stay disabled.
+
+### Choosing a transcription engine
+Open **Settings → Transcription Engine**:
+- **Local (Whisper)** — default, offline, private.
+- **Mistral (Voxtral, cloud)** — enabled once a key is set; audio is uploaded to Mistral.
+
+The home page shows a banner indicating which engine is active (and warns when audio will
+leave your machine).
 
 ### Running the Application
 

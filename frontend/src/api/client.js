@@ -90,6 +90,23 @@ export async function updateSettings(settings) {
   return data;
 }
 
+// Mistral API key management. The raw key is only ever sent to the local backend;
+// the backend never returns it — these calls get back a status (configured/source/hint).
+export async function saveMistralKey(apiKey, remember = false) {
+  const { data } = await api.post('/settings/mistral-key', { api_key: apiKey, remember });
+  return data;
+}
+
+export async function deleteMistralKey() {
+  const { data } = await api.delete('/settings/mistral-key');
+  return data;
+}
+
+export async function testMistralConnection() {
+  const { data } = await api.post('/settings/test-connection');
+  return data;
+}
+
 // Mistral Refinement API
 export async function getRefinementModes() {
   const { data } = await api.get('/refine/modes');

@@ -485,6 +485,39 @@ start.bat:
 
 ---
 
+## 🔑 Secure Key Handling + Local-vs-Cloud Engine (Prompt 2)
+
+This is the deployment-strategist story in miniature: **choosing the right model for the
+customer's constraint** — privacy/offline/cost vs. cloud quality — with **enterprise-grade
+data hygiene**.
+
+### The selectable engine
+- **Local (Whisper)** is the default and the privacy story: audio never leaves the machine.
+- **Mistral (Voxtral, cloud)** is opt-in for when accuracy/features matter more than locality.
+- They sit behind a tiny `TranscriptionEngine` interface (`transcribe(audio) -> result`), so
+  the *entire* downstream pipeline (view → .docx → refinement) is engine-agnostic. Adding a
+  third engine is one new class — that extensibility is the architectural point to make.
+- **Talking point**: "I didn't pick one model; I made the model a *decision the customer owns*,
+  and made switching it free for everything downstream."
+
+### Secure key handling
+- **Precedence**: environment / `.env` is primary (headless/automation); the Settings field is
+  an override for non-technical users who won't edit a dotfile.
+- **Storage tiers**: in-memory for the session by default; opt-in **OS keychain** (Windows
+  Credential Manager via `keyring`) — never a plaintext file.
+- **The key never travels back to the browser.** The API returns only *configured / source /
+  last-4 hint*. Saving sends the key to the local backend over localhost; "Test connection"
+  validates it with one lightweight call.
+- **Talking point**: "Data control isn't just where the audio goes — it's how the credential is
+  stored, surfaced, and never leaked. The API is designed so the secret has exactly one
+  direction of travel." This mirrors Mistral's own enterprise data-control proposition.
+
+### Transparency
+- The UI says plainly when audio will be uploaded (Settings note + a home-page engine banner),
+  so the privacy trade-off is always visible at the moment of action — not buried in a config.
+
+---
+
 ## 🎯 Final Message
 
 This project is more than just a transcription tool - it's a **demonstration of AI deployment strategy in action**. It shows how to:

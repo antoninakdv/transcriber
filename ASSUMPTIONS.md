@@ -160,6 +160,35 @@ This document records decisions made during the review and implementation proces
 
 ---
 
+## Prompt 2 Assumptions (API key in Settings + Voxtral engine)
+
+**ASSUMPTION-026: Key resolution precedence (env wins)**
+- **Decision**: Active key = `MISTRAL_API_KEY` env/`.env` → session key (entered in UI) → keychain.
+- **Reasoning**: Prompt 2 states "env / `.env` remains the primary source; the Settings field is an override." Read literally, env stays authoritative for headless/automated use; the UI field is the path for users who won't edit `.env`.
+- **Impact**: A key set in the environment cannot be overridden from the UI (documented trade-off). `get_active_key()` in `mistral_client.py` is the single source of truth.
+
+**ASSUMPTION-027: `keyring` added as a dependency**
+- **Decision**: Add `keyring` (Windows Credential Manager backend) for the optional "remember on this device".
+- **Reasoning**: Prompt 2 explicitly permits "no new dependencies beyond what's needed for secure key storage (e.g. `keyring`)." Prompt 1's one-dependency rule is superseded for this specific purpose.
+- **Impact**: Two backend dependencies now (`mistralai`, `keyring`). Remembered keys live in the OS keychain, never a file.
+
+**ASSUMPTION-028: Key never persisted to settings.json**
+- **Decision**: The API key is handled by dedicated endpoints (`/api/settings/mistral-key`), never written to `settings.json`.
+- **Reasoning**: `settings.json` is plaintext; secrets must not land there.
+- **Impact**: `GET /api/settings` returns only `{configured, source, hint(last4)}` — never the raw key.
+
+**ASSUMPTION-029: Engine default is a global setting; per-request override supported**
+- **Decision**: `transcription_engine` lives in `settings.json` (default `whisper`). The transcribe endpoint also accepts an optional `engine` override, but the UI uses the global default.
+- **Reasoning**: Prompt 2: "Put the default-engine choice in Settings; allow a per-transcription override only if the existing UI makes that simple, otherwise a global default is fine."
+- **Impact**: Minimal UI change; the existing Transcribe button honors the configured engine.
+
+**ASSUMPTION-030: Voxtral model + call from current docs/SDK**
+- **Decision**: Use `voxtral-mini-latest` via `client.audio.transcriptions.complete(model=, file={content,file_name}, timestamp_granularities=["segment"])`, normalized to `{text, language, segments}`.
+- **Reasoning**: Verified against the live Mistral docs and by introspecting the installed `mistralai` 2.4.13 SDK — not from memory.
+- **Impact**: Voxtral output flows into the exact same downstream path as Whisper (view → .docx → refinement).
+
+---
+
 ## Decision Log Format
 
 Each decision follows this format:
@@ -176,4 +205,4 @@ None at this time. The UPGRADE_PROMPT provides sufficient guidance for all major
 
 ---
 
-*Last updated: 2026-06-19*
+*Last updated: 2026-06-21 (Prompt 2)*
