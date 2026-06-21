@@ -37,6 +37,9 @@ for d in [UPLOADS_DIR, RECORDINGS_DIR, EXPORTS_DIR]:
 
 ALLOWED_EXTENSIONS = {".ogg", ".mp3", ".wav", ".mp4", ".m4a", ".webm", ".flac", ".aac"}
 
+# Server-side cap on uploaded/recorded audio size (defence in depth, not just the UI).
+MAX_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB
+
 WHISPER_MODELS = ["tiny", "base", "small", "medium", "large"]
 DEFAULT_MODEL = "base"
 

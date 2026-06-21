@@ -2,8 +2,10 @@ import json
 import uuid
 from pathlib import Path
 
-from config import UPLOADS_DIR, RECORDINGS_DIR, ALLOWED_EXTENSIONS
+from config import UPLOADS_DIR, RECORDINGS_DIR, ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
 from models import FileInfo, TranscriptionResult
+
+_MAX_MB = MAX_UPLOAD_BYTES // (1024 * 1024)
 
 
 def generate_id() -> str:
@@ -18,13 +20,17 @@ def save_upload(filename: str, content: bytes) -> FileInfo:
     ext = Path(filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise ValueError(f"Unsupported file type: {ext}")
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise ValueError(f"File too large (max {_MAX_MB} MB)")
+    # The file is written under a generated id + validated extension, so the client
+    # filename can never influence the path on disk; we keep only its bare name for display.
     file_id = generate_id()
     safe_name = f"{file_id}{ext}"
     path = UPLOADS_DIR / safe_name
     path.write_bytes(content)
     meta = FileInfo(
         id=file_id,
-        name=filename,
+        name=Path(filename).name,
         size=len(content),
         type="upload",
         has_transcription=False,
@@ -34,14 +40,18 @@ def save_upload(filename: str, content: bytes) -> FileInfo:
 
 
 def save_recording(content: bytes, filename: str = "recording.webm") -> FileInfo:
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise ValueError(f"Recording too large (max {_MAX_MB} MB)")
     file_id = generate_id()
-    ext = Path(filename).suffix.lower() or ".webm"
+    ext = Path(filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        ext = ".webm"
     safe_name = f"{file_id}{ext}"
     path = RECORDINGS_DIR / safe_name
     path.write_bytes(content)
     meta = FileInfo(
         id=file_id,
-        name=filename,
+        name=Path(filename).name,
         size=len(content),
         type="recording",
         has_transcription=False,

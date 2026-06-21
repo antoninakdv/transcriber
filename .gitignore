@@ -17,14 +17,25 @@ node_modules/
 dist/
 build/
 
-# your data - never commit audio or transcripts
+# your data - never commit audio, transcripts, or exports
 *.wav
 *.mp3
 *.m4a
 *.ogg
+*.webm
+*.flac
+*.aac
+*.mp4
 recordings/
 transcripts/
 output/
+# runtime workspace (uploaded audio, saved transcripts, generated .docx)
+backend/workspace/uploads/
+backend/workspace/recordings/
+backend/workspace/exports/
+*.docx
+*.meta.json
+*.transcription.json
 
 # whisper models (large)
 *.pt

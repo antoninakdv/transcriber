@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { uploadFile } from '../api/client';
 
 const ACCEPTED = '.ogg,.mp3,.wav,.mp4,.m4a,.webm,.flac,.aac';
@@ -20,7 +20,7 @@ export default function FileDropZone({ onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef(null);
 
-  const handleFiles = async (files) => {
+  const handleFiles = useCallback(async (files) => {
     const valid = files.filter(isAudioFile);
     if (!valid.length) {
       alert('No supported audio/video files found. Supported: OGG, MP3, WAV, MP4, M4A, WEBM, FLAC, AAC');
@@ -37,7 +37,7 @@ export default function FileDropZone({ onUploaded }) {
     } finally {
       setUploading(false);
     }
-  };
+  }, [onUploaded]);
 
   useEffect(() => {
     const onPaste = (e) => {
@@ -49,7 +49,7 @@ export default function FileDropZone({ onUploaded }) {
     };
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
-  }, []);
+  }, [handleFiles]);
 
   const onDrop = (e) => {
     e.preventDefault();

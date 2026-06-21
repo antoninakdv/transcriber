@@ -1,381 +1,158 @@
-# Transcriber with Mistral Refinement
+# Transcriber
 
-A lightweight, local audio transcription tool that uses Whisper for speech-to-text, with optional Mistral-powered refinement for enhanced results.
-
-## The Problem
-
-Voice-to-text transcription is essential for meetings, interviews, and content creation, but existing solutions often have trade-offs:
-- **Cloud services** require internet connectivity and may have privacy concerns
-- **Local solutions** like Whisper provide privacy but can have rough output with fillers, repetitions, and errors
-- **Manual cleanup** is time-consuming and doesn't scale
-
-## The Solution
-
-This tool provides the best of both worlds:
-1. **Fully local Whisper transcription** - No internet required, complete privacy
-2. **Optional Mistral refinement** - Post-process transcripts for professional results
-3. **Multiple refinement modes** - Tailored processing for different use cases
-4. **Zero infrastructure complexity** - Runs on your local machine with a simple startup
+A lightweight, local-first audio transcription app. It turns audio into text with **OpenAI Whisper running on your own machine**, and can optionally use **Mistral** for cloud transcription (Voxtral) and for refining transcripts into notes, action items, and more. It runs as a small FastAPI backend plus a React frontend — no Docker, no database, no cloud account required to get started.
 
 ## Features
 
-### Core Transcription
-- ✅ **Drag and drop** audio files (OGG, MP3, WAV, MP4, M4A, WEBM, FLAC, AAC)
-- ✅ **File browser upload** with multi-file support
-- ✅ **Paste from clipboard** (Ctrl+V) for audio files
-- ✅ **In-browser recording** with save functionality
-- ✅ **Multiple Whisper models** (tiny, base, small, medium, large)
-- ✅ **Progress tracking** with status indicators
-- ✅ **Audio playback** directly in the browser
+- **Two transcription engines**
+  - **Local (Whisper)** — the default. Runs fully offline; audio never leaves your machine.
+  - **Mistral (Voxtral, cloud)** — optional, enabled once you add a Mistral API key.
+- **Flexible input** — drag & drop, file browser, paste from clipboard (Ctrl+V), or record directly in the browser. Supports OGG, MP3, WAV, MP4, M4A, WEBM, FLAC, AAC.
+- **Transcript view** — timestamped segments plus the full text.
+- **Per-segment playback** — click ▶ on any segment to hear just that snippet of the audio.
+- **Editable transcripts** — edit the text and save; the edited version becomes canonical for export and refinement.
+- **Word export** — download any transcript (original, edited, or refined) as a `.docx`.
+- **Refinement with Mistral** (optional) — post-process a transcript through one of five modes:
+  | Mode | Best for | Output |
+  |------|----------|--------|
+  | Meeting Notes | Meetings, calls | Structured headed bullets |
+  | Clean Transcript | Speeches, dictation | Natural, filler-free prose |
+  | Action Items | Task capture | Structured JSON checklist |
+  | Prompt Generator | Turning spoken intent into an LLM prompt | A well-formed prompt |
+  | Custom | Anything | Follows your own instruction |
+- **Secure API-key handling** — enter the key in Settings (masked) or via `.env`; test the connection; optionally remember it in your OS keychain. The key is never returned to the browser or written to a plaintext file.
 
-### File Management
-- ✅ **List all files** with metadata
-- ✅ **View transcriptions** with timestamps
-- ✅ **Delete files** with confirmation
-- ✅ **Export to DOCX** with formatting
+Without a Mistral key, the app is a fully functional **offline Whisper transcriber** — the cloud engine and refinement simply stay disabled.
 
-### Mistral Refinement (Optional)
-- ✅ **Meeting Notes** - Structured summary with key points and decisions
-- ✅ **Clean Transcript** - Natural speech rewrite, removing fillers and repetitions
-- ✅ **Action Items** - Structured checklist with tasks, owners, due dates
-- ✅ **Prompt Generator** - Create best-practice LLM prompts from spoken intent
-- ✅ **Custom Instruction** - Apply your own processing rules
-- ✅ **Graceful degradation** - Works without API key, all features opt-in
+## Prerequisites
 
-### Transcription Engines (choose per your constraint)
-- ✅ **Local (Whisper)** — the **default**, fully offline and private
-- ✅ **Mistral (Voxtral, cloud)** — opt-in, higher-quality cloud STT (`voxtral-mini-latest`)
-- ✅ **Same downstream flow** — both engines feed view → .docx → refinement identically
-- ✅ **Pluggable design** — adding another engine is one new class
+- **Python 3.10+**
+- **Node.js 18+**
+- **ffmpeg** on your PATH — Whisper uses it to decode audio. ([download](https://ffmpeg.org/download.html))
 
-### Secure API Key Handling
-- ✅ **Masked field in Settings** — enter your Mistral key in the UI (password-style)
-- ✅ **Precedence**: environment / `.env` is primary; the Settings field is an override
-- ✅ **Session by default**; optional **"Remember on this device"** stores it in the **OS keychain** (Windows Credential Manager via `keyring`) — never a plaintext file
-- ✅ **Never returned to the browser** — the API exposes only *configured / source / last-4 hint*
-- ✅ **Test connection** button and a clear connected / no-key status indicator
+## Setup
 
-### Data Control & Privacy
-- ✅ **Whisper-only is first-class** - Full functionality without Mistral
-- ✅ **Local-first design** - No data leaves your machine unless you choose
-- ✅ **Secure key handling** - Env/keychain, never logged or committed
-- ✅ **Transparent cloud use** - the UI states plainly when audio is sent to Mistral
-- ✅ **No tracking or telemetry**
-
-## Quick Start
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- pip and npm/yarn
-
-### Installation
-
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd Transcriber
-```
-
-2. **Set up backend**
-```bash
+# 1. Backend
 cd backend
 python -m venv venv
-# On Windows:
+# Windows:
 venv\Scripts\activate
-# On macOS/Linux:
+# macOS/Linux:
 source venv/bin/activate
-
 pip install -r requirements.txt
 cd ..
-```
 
-3. **Set up frontend**
-```bash
+# 2. Frontend
 cd frontend
 npm install
 cd ..
 ```
 
-4. **(Optional) Set Mistral API key** — needed only for Voxtral transcription and refinement
+### Optional: Mistral API key
 
-   Two ways (env takes precedence):
-   - **`.env` file** (primary, good for a permanent setup):
-     ```bash
-     # Create .env file in project root
-     echo MISTRAL_API_KEY=your_api_key_here > .env
-     ```
-   - **In the app** — open **Settings**, paste your key into the masked field, and Save.
-     Tick **"Remember on this device"** to store it in your OS keychain; otherwise it lasts
-     only for the session. Use **Test connection** to verify it.
+Needed only for the Voxtral engine and for refinement. The environment / `.env` takes precedence; the Settings field is an override.
 
-   Get your API key from [Mistral Console](https://console.mistral.ai/).
+- **`.env`** (recommended for a permanent setup) — create `.env` in the project root or `backend/`:
+  ```
+  MISTRAL_API_KEY=your_api_key_here
+  ```
+- **In the app** — open **Settings**, paste the key into the masked field, and Save. Tick **"Remember on this device"** to store it in your OS keychain; otherwise it lasts only for the session. Use **Test connection** to verify it.
 
-   **Without a key the app is a fully functional offline Whisper transcriber** — Voxtral and
-   refinement simply stay disabled.
+Get a key from the [Mistral Console](https://console.mistral.ai/). See `.env.example` for the template.
 
-### Choosing a transcription engine
-Open **Settings → Transcription Engine**:
-- **Local (Whisper)** — default, offline, private.
-- **Mistral (Voxtral, cloud)** — enabled once a key is set; audio is uploaded to Mistral.
+## Running
 
-The home page shows a banner indicating which engine is active (and warns when audio will
-leave your machine).
-
-### Running the Application
-
-**Simple startup (recommended):**
+**Windows (one command):**
 ```bash
-# On Windows:
 start.bat
-
-# On macOS/Linux:
-# See Alternative Startup below
 ```
+This starts the backend (http://127.0.0.1:8000) and frontend (http://localhost:5173) minimized and opens your browser.
 
-The application will:
-- Start the backend server (port 8000) in the background
-- Start the frontend server (port 5173) in the background  
-- Automatically open your browser to http://localhost:5173
-
-**Alternative startup (manual):**
+**Any platform (manual):**
 ```bash
-# Terminal 1: Start backend
+# Terminal 1 — backend (localhost only)
 cd backend
-venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+venv\Scripts\python -m uvicorn main:app --host 127.0.0.1 --port 8000   # Windows
+# python -m uvicorn main:app --host 127.0.0.1 --port 8000              # macOS/Linux
 
-# Terminal 2: Start frontend
+# Terminal 2 — frontend
 cd frontend
 npm run dev
-
-# Then open http://localhost:5173 in your browser
 ```
+Then open http://localhost:5173.
 
-## Usage Guide
+> The backend binds to `127.0.0.1` and CORS is restricted to the local frontend, so the app is not reachable from your network.
 
-### Basic Transcription
-1. **Upload**: Drag & drop audio files, use file browser, or paste (Ctrl+V)
-2. **Record**: Click "Record Audio" button, speak, then save
-3. **Transcribe**: Click "Transcribe" button for any uploaded file
-4. **View**: Click on transcribed files to see results
-5. **Export**: Click "Export DOCX" to download formatted Word documents
+## Usage
 
-### Using Mistral Refinement
-1. **Transcribe** your audio file as normal
-2. **View** the transcription
-3. **Select refinement mode** from the "Refine with Mistral" dropdown
-4. **Click "Refine Transcript"** to process
-5. **Toggle** between original and refined versions
-6. **Export refined** DOCX with improvements
-
-#### Refinement Modes
-| Mode | Best For | Output |
-|------|----------|--------|
-| **Meeting Notes** | Meetings, interviews | Structured bullet points |
-| **Clean Transcript** | Presentations, speeches | Natural reading text |
-| **Action Items** | Task extraction | Structured JSON/Checklist |
-| **Prompt Generator** | LLM prompt creation | Best-practice prompts |
-| **Custom** | Custom processing | Depends on instruction |
-
-## Architecture
-
-### Technology Stack
-- **Backend**: FastAPI (Python) with Uvicorn server
-- **Transcription**: OpenAI Whisper (local inference)
-- **Refinement**: Mistral AI API (optional, cloud-based)
-- **Frontend**: React 19 with Vite build system
-- **Document Export**: python-docx library
-
-### Design Principles
-- **Local-first**: All core functionality works without internet
-- **Opt-in enhancement**: Mistral features are optional add-ons
-- **Data control**: You control when/if data leaves your machine
-- **Zero complexity**: No Docker, containers, or infrastructure required
-- **Single command startup**: Everything starts with one file
-
-### File Structure
-```
-backend/
-├── main.py              # FastAPI application entry
-├── config.py            # Configuration constants
-├── models.py            # Pydantic data models
-├── services/
-│   ├── file_service.py  # File management
-│   ├── whisper_service.py # Whisper transcription
-│   ├── docx_service.py  # DOCX export
-│   ├── mistral_client.py # Mistral API client
-│   ├── refine.py        # Refinement service with modes
-│   └── settings_service.py # Settings management
-└── routers/
-    ├── files.py         # File upload/listing endpoints
-    ├── transcribe.py    # Transcription job endpoints
-    ├── export.py        # DOCX export endpoints
-    └── refine.py        # Refinement endpoints
-
-frontend/
-├── src/
-│   ├── App.jsx          # Main application
-│   ├── api/client.js    # API client methods
-│   ├── hooks/
-│   │   ├── useTranscription.js # Transcription state
-│   │   └── useRefinement.js   # Refinement state
-│   ├── components/
-│   │   ├── TranscriptionView.jsx # Transcript display
-│   │   ├── RefinementPanel.jsx # Refinement UI
-│   │   └── ...          # Other components
-│   └── pages/
-│       └── HomePage.jsx # Main page
-└── package.json
-```
+1. **Add audio** — drag & drop, browse, paste, or record.
+2. **Choose an engine** (optional) — Settings → Transcription Engine. Whisper is the default; Voxtral needs a key. The home page shows which engine is active and warns when audio will be sent to the cloud.
+3. **Transcribe** — click *Transcribe* on a file; progress is shown while it runs.
+4. **View / play / edit** — open the transcript, play any segment with ▶, or click *Edit* to correct the text and *Save*.
+5. **Refine** (optional) — pick a mode under *Refine with Mistral* and run it; toggle between original and refined.
+6. **Export** — download the transcript as `.docx`.
 
 ## Configuration
 
-### Environment Variables
-```bash
-# Mistral API Key (optional)
-MISTRAL_API_KEY=your_api_key_here
+- **Whisper model** (Settings) — `tiny`, `base` (default), `small`, `medium`, `large`. Larger models are more accurate but slower and use more memory; the model downloads automatically on first use.
+- **Transcription engine** (Settings) — Whisper (local) or Voxtral (cloud).
+- **Environment** — `MISTRAL_API_KEY` (see above). Models and engine are persisted in `backend/settings.json`.
+
+## Project structure
+
+```
+backend/
+├── main.py                 # FastAPI app + settings/key endpoints
+├── config.py               # paths, allowed types, limits, .env loader
+├── models.py               # Pydantic models
+├── routers/                # files, transcribe, export, refine
+├── services/
+│   ├── transcription_engines.py  # WhisperEngine + VoxtralEngine (pluggable)
+│   ├── whisper_service.py        # local Whisper model loading/transcription
+│   ├── mistral_client.py         # Mistral key store + chat + Voxtral STT
+│   ├── refine.py                 # refinement mode registry + prompts
+│   ├── file_service.py           # upload/recording/transcript storage
+│   ├── docx_service.py           # .docx generation
+│   └── settings_service.py       # settings persistence
+└── tests/                  # lightweight unit tests
+
+frontend/
+├── src/
+│   ├── api/client.js       # backend API calls
+│   ├── components/         # FileList, TranscriptionView, RefinementPanel, ...
+│   ├── hooks/              # useTranscription, useRefinement, useAudioRecorder
+│   └── pages/              # HomePage, SettingsPanel
+└── package.json
 ```
 
-### Settings
-- **Whisper Model**: Change in Settings panel (tiny, base, small, medium, large)
-- Larger models provide better accuracy but use more memory and are slower
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the design and data flow.
 
-### Whisper Models Comparison
-| Model | Size | Speed | Accuracy | Use Case |
-|-------|------|-------|----------|----------|
-| tiny | 39M | ⚡⚡⚡⚡ | Basic | Quick testing |
-| base | 74M | ⚡⚡⚡ | Good | General use |
-| small | 244M | ⚡⚡ | Better | Better quality |
-| medium | 769M | ⚡ | High | Professional use |
-| large | 1550M | ⚡ | Best | Maximum accuracy |
+## Tests
 
-## Security & Privacy
+Backend unit tests (no API key or network required) use the standard library:
 
-### Data Handling
-- ✅ **Audio files**: Stored locally, never transmitted anywhere
-- ✅ **Transcriptions**: Stored locally, never transmitted anywhere
-- ✅ **API keys**: Never stored in code, never committed to git
-- ✅ **Mistral API**: Only called when you explicitly choose refinement
-- ✅ **No telemetry**: No usage tracking or data collection
-
-### Key Management
-API keys are handled with priority:
-1. **Environment variable** (`.env` file, git-ignored)
-2. **Session input** (masked, in-memory only)
-3. **Optional OS keychain** (for remembering across sessions)
-
-**Never**: Hardcoded in source, logged, or committed.
-
-## Interview Talking Points
-
-This project demonstrates key capabilities for an **AI Deployment Strategist** role:
-
-### 1. **Real-World LLM Integration**
-- Practical use case: voice → text → LLM refinement → document
-- Clear value proposition: saves time, improves quality, maintains privacy
-- Production-ready implementation with proper error handling
-
-### 2. **Prompt Engineering Excellence**
-- Evidence-based practices: system/user separation, explicit instructions
-- Few-shot examples for format-sensitive tasks
-- Explicit output contracts (JSON schema for action items)
-- Guardrails against fabrication
-- Versioned and documented prompts
-
-### 3. **Architecture & Design**
-- **Local-first**: Respects data sovereignty requirements
-- **Opt-in enhancement**: Mistral as progressive enhancement
-- **Registry pattern**: Easy to extend with new modes
-- **Separation of concerns**: Clean layer boundaries
-- **Graceful degradation**: Works without API keys
-
-### 4. **Enterprise Considerations**
-- **Data control**: Maps to Mistral's enterprise value proposition
-- **Cost awareness**: Low temperature for fidelity tasks, configurable models
-- **Error handling**: Network, rate limit, authentication errors handled
-- **Security**: Proper key management, no secrets in code
-- **Scalability**: Registry pattern allows easy mode extension
-
-### 5. **Deployment Strategy**
-- **Zero infrastructure**: No servers, containers, or complex setup
-- **Single command**: Simple startup for end users
-- **Cross-platform**: Works on Windows, macOS, Linux
-- **User-friendly**: Non-technical users can operate it
-
-## Development Workflow
-
-### Running Tests
 ```bash
-# Backend tests
 cd backend
-venv\Scripts\python verify_backend.py
-
-# Refinement tests (no API key required)
-venv\Scripts\python test_refinement.py
+venv\Scripts\python -m unittest discover -s tests   # Windows
+# python -m unittest discover -s tests              # macOS/Linux
 ```
 
-### Adding New Refinement Modes
-1. Add new mode to `RefinementMode` enum in `services/refine.py`
-2. Add configuration to `PROMPT_TEMPLATES` dictionary
-3. That's it! Mode automatically appears in UI
+Frontend lint and build:
 
-### Project Structure
-- Follows existing patterns for consistency
-- Small, single-purpose functions
-- Type hints throughout
-- Readable by non-engineers
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
-## Roadmap
+## Privacy & security
 
-### Completed ✅
-- M0: Full codebase review and documentation
-- M1: Plumbing refactoring and quality improvements
-- M2: Mistral client + all 5 refinement modes
-- M3: Complete mode implementation (all modes in M2)
-
-### Future Enhancements
-- Chunking for long transcripts (context window management)
-- Session-only API key input in UI
-- OS keychain integration for key persistence
-- Audio playback during recording
-- File size limits and validation
-- Concurrent transcription management
-
-## Support
-
-### Troubleshooting
-- **Whisper models**: First run downloads models automatically (can be several GB)
-- **Memory issues**: Use smaller models if you have limited RAM
-- **Mistral API**: Ensure API key is set and valid
-- **Port conflicts**: Change ports in `start.bat` if 8000/5173 are in use
-
-### Getting Help
-1. Check this README for common issues
-2. Verify all dependencies are installed
-3. Ensure environment variables are set correctly
-4. Check browser console and backend logs for errors
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests to ensure no regressions
-5. Submit a pull request
+- Audio and transcripts are stored locally under `backend/workspace/` and are git-ignored — nothing is committed.
+- The Mistral API key is read from the environment/keychain/session only; it is never logged, returned to the browser, or written to a plaintext file.
+- Mistral is contacted only when you select the Voxtral engine or run a refinement; the UI states plainly when audio will be uploaded.
+- The server binds to localhost and CORS is limited to the local frontend.
 
 ## License
 
-This project is provided as-is for portfolio and interview purposes.
-
-## Credits
-
-- **Transcription**: [OpenAI Whisper](https://github.com/openai/whisper)
-- **LLM Refinement**: [Mistral AI](https://mistral.ai/)
-- **Backend Framework**: [FastAPI](https://fastapi.tiangolo.com/)
-- **Frontend Framework**: [React](https://react.dev/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-
----
-
-*Built with care for the AI Deployment Strategist role*  
-*Demoable in under a minute, explainable line by line*
+Released under the [MIT License](LICENSE).

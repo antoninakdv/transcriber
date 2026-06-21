@@ -18,8 +18,11 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.post("/recording", response_model=FileInfo)
 async def save_recording(file: UploadFile = File(...)):
-    content = await file.read()
-    return file_service.save_recording(content, file.filename or "recording.webm")
+    try:
+        content = await file.read()
+        return file_service.save_recording(content, file.filename or "recording.webm")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("", response_model=list[FileInfo])
